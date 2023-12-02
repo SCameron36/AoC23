@@ -284,34 +284,18 @@ namespace AoC23
                 foreach (string row in data)
                 {
                     bool pass = true;
-                    foreach(string r in row.Split(";"))
-                    {
-                        int red = 0, blue = 0, green = 0;
+                    List<int> red = new List<int>(), blue = new List<int>(), green = new List<int>();
 
-                        foreach (Match m in regexR.Matches(r))
-                            red = int.Parse(m.Value.Replace(" r", ""));
+                    foreach (Match m in regexR.Matches(row))
+                        red.Add(int.Parse(m.Value.Replace(" r", "")));
 
-                        pass = red <= 12;
-                        if (pass)
-                        {
-                            foreach (Match m in regexB.Matches(r))
-                                blue = int.Parse(m.Value.Replace(" b", ""));
+                    foreach (Match m in regexB.Matches(row))
+                        blue.Add(int.Parse(m.Value.Replace(" b", "")));
 
-                            pass = blue <= 14;
-                            if (pass)
-                            {
-                                foreach (Match m in regexG.Matches(r))
-                                    green = int.Parse(m.Value.Replace(" g", ""));
+                    foreach (Match m in regexG.Matches(row))
+                        green.Add(int.Parse(m.Value.Replace(" g", "")));
 
-                                pass = green <= 13;
-                            }
-                        }
-
-                        if (!pass)
-                            break;
-                    }
-
-                    if (pass)
+                    if (red.Max() <=12 && blue.Max() <=14 && green.Max() <= 13)
                      sum += data.IndexOf(row) + 1;                    
                 }
                 printInt(sum);
