@@ -283,7 +283,6 @@ namespace AoC23
                 
                 foreach (string row in data)
                 {
-                    bool pass = true;
                     List<int> red = new List<int>(), blue = new List<int>(), green = new List<int>();
 
                     foreach (Match m in regexR.Matches(row))
@@ -296,7 +295,7 @@ namespace AoC23
                         green.Add(int.Parse(m.Value.Replace(" g", "")));
 
                     if (red.Max() <=12 && blue.Max() <=14 && green.Max() <= 13)
-                     sum += data.IndexOf(row) + 1;                    
+                        sum += data.IndexOf(row) + 1;                    
                 }
                 printInt(sum);
             }
@@ -330,15 +329,95 @@ namespace AoC23
             #endregion
 
             #region day 3
-            void day3a() //
+            void day3a() //512794
             {
+                List<string> data = dataToList(getData("3"), Environment.NewLine);
+                Regex regex = new Regex(@"\d+");
 
+                int total = 0;
+                
+                for (int i = 0; i < data.Count; i++)
+                {
+                    Dictionary<int, char>? curRow = getSymbols(data[i]);
+                    Dictionary<int, char>? prevRow = null, nextRow = null;
+
+                    MatchCollection matches = regex.Matches(data[i]);
+                    if (i > 0)
+                        prevRow = getSymbols(data[i - 1]);
+
+                    if (i < data.Count - 1)
+                        nextRow = getSymbols(data[i + 1]);
+
+                    foreach(Match m in matches)
+                    {
+                        int indexS = m.Index; //match start index
+                        int indexE = m.Index + m.Length - 1; //match end index
+
+                        if ((prevRow != null && prevRow.Keys.Any(x => indexS - 1 <= x && indexE + 1 >= x))
+                        || (curRow.Keys.Any(x => indexS - 1 <= x && indexE + 1 >= x))
+                        || (nextRow != null && nextRow.Keys.Any(x => indexS - 1 <= x && indexE + 1 >= x)))
+                            total += int.Parse(m.Value);
+                    }
+                }
+                printInt(total);
             }
 
-            void day3b() //
+            Dictionary<int, char> getSymbols(string row, char? specific = null)
             {
+                Dictionary<int, char> symbols = new Dictionary<int, char>();
 
+                for (var i = 0; i < row.Length; i++)
+                    if (!char.IsNumber(row[i]) && !char.Equals(row[i], '.') && (specific == null || char.Equals(row[i], specific)))
+                        symbols.Add(i, row[i]);
 
+                return symbols;
+            }
+
+            void day3b() //67779080
+            {
+                List<string> data = dataToList(getData("3"), Environment.NewLine);
+                Regex regex = new Regex(@"\d+");
+
+                int total = 0;
+
+                for (int i = 0; i < data.Count; i++)
+                {
+                    Dictionary<int, char> curRow = getSymbols(data[i], '*');
+                    string prevRow = null, nextRow = null;
+
+                    foreach(var s in curRow)
+                    {
+                        if (i > 0)
+                            prevRow = data[i - 1];
+
+                        if (i < data.Count - 1)
+                            nextRow = data[i + 1];
+
+                        List<int> nums = adjNum(data[i], s.Key, prevRow, nextRow);
+
+                        if (nums.Count == 2)
+                            total += (nums[0] * nums[1]);
+                    }
+                    
+                }
+                printInt(total);
+            }
+
+            List<int> adjNum(string row, int i, string? prevRow, string? nextRow)
+            {
+                List<int> adjNum = new List<int>();
+
+                var matches = Regex.Matches(row, @"\d+").ToList();
+
+                if (prevRow != null)
+                    matches.AddRange(Regex.Matches(prevRow, @"\d+"));
+
+                if (nextRow != null)
+                    matches.AddRange(Regex.Matches(nextRow, @"\d+"));
+
+                adjNum.AddRange(matches.Where(x => (i >= x.Index - 1 && i <= (x.Index + x.Length))).Select(x => int.Parse(x.Value)));
+
+                return adjNum;
             }
             #endregion
 
