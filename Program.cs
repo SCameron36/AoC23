@@ -478,10 +478,8 @@ namespace AoC23
                                 rowTotal++;
 
                         for (int x = 1; x <= rowTotal; x++)
-                        {
                             if (amounts.ContainsKey(i+x))
                                 amounts[i+x]+= amounts[i];
-                        }
 
                         total += amounts[i];
                     }
