@@ -422,14 +422,71 @@ namespace AoC23
             #endregion
 
             #region day 4
-            void day4a() //
+            void day4a() //17782
             {
+                List<string> data = dataToList(getData("4"), Environment.NewLine);
+                Regex regex = new Regex(@"\d+");
+                int total = 0;
 
+                foreach (string row in data)
+                {
+                    string winning = row.Split("|")[0];
+                    string yours = row.Split("|")[1];
+
+                    winning = winning.Remove(0, winning.IndexOf(":")+1).Replace("  ", " 0");
+                    yours = yours.Replace("  ", " 0");
+
+                    MatchCollection winningNums = regex.Matches(winning);
+                    int rowTotal = 0;
+
+                    foreach (Match match in winningNums)
+                        if (yours.Contains(match.Value))
+                            rowTotal = rowTotal == 0 ? 1 : rowTotal * 2;
+
+                    total += rowTotal;
+                }
+                printInt(total);
             }
 
             void day4b() //
             {
+                List<string> data = dataToList(getData("4"), Environment.NewLine);
+                Regex regex = new Regex(@"\d+");
+                Dictionary<int, int> amounts = new Dictionary<int, int>();
+                int total = 0;
 
+                for(int i = 0; i < data.Count; i++)
+                    amounts.Add(i, 1);
+                
+                for(int i = 0; i < data.Count; i++)
+                {
+                    string row = data[i];
+
+                    if (amounts.ContainsKey(i) && amounts[i] > 0)
+                    {
+                        string winning = row.Split("|")[0];
+                        string yours = row.Split("|")[1];
+
+                        winning = winning.Remove(0, winning.IndexOf(":") + 1).Replace("  ", " 0");
+                        yours = yours.Replace("  ", " 0");
+
+                        MatchCollection winningNums = regex.Matches(winning);
+                        int rowTotal = 0;
+
+                        foreach (Match match in winningNums)
+                            if (yours.Contains(match.Value))
+                                rowTotal++;
+
+                        for (int x = 1; x <= rowTotal; x++)
+                        {
+                            if (amounts.ContainsKey(i+x))
+                                amounts[i+x]+= amounts[i];
+                        }
+
+                        total += amounts[i];
+                    }
+                }
+                printInt(total);
             }
             #endregion
 
