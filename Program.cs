@@ -15,7 +15,7 @@ namespace AoC23
     internal class Program
     {
         record struct Point(int X, int Y);
-        Regex regex = new Regex(@"\d+");
+        static Regex regexNum = new Regex(@"\d+");
         static void Main(string[] args)
         {
             string selection = string.Empty;
@@ -236,10 +236,9 @@ namespace AoC23
 
             foreach (string row in data)
             {
-                Regex regex = new Regex(@"\d+");
                 string nums = "";
 
-                foreach (Match m in regex.Matches(row))
+                foreach (Match m in regexNum.Matches(row))
                     nums += m.Value;
 
                 int x = int.Parse(nums[0].ToString() + nums[nums.Length - 1].ToString());
@@ -258,10 +257,9 @@ namespace AoC23
                 string newRow = row.Replace("twone", "21").Replace("oneight", "18").Replace("eightwo", "82");
                 newRow = newRow.Replace("one", "1").Replace("two", "2'").Replace("three", "3").Replace("four", "4").Replace("five", "5").Replace("six", "6").Replace("seven", "7").Replace("eight", "8").Replace("nine", "9");
 
-                Regex regex = new Regex(@"\d+");
                 string nums = "";
 
-                foreach (Match m in regex.Matches(newRow))
+                foreach (Match m in regexNum.Matches(newRow))
                     nums += m.Value;
 
                 int x = int.Parse(nums[0].ToString() + nums[nums.Length - 1].ToString());
@@ -332,7 +330,6 @@ namespace AoC23
         static void day3a() //512794
         {
             List<string> data = dataToList(getData("3"), Environment.NewLine);
-            Regex regex = new Regex(@"\d+");
 
             int total = 0;
 
@@ -341,7 +338,7 @@ namespace AoC23
                 Dictionary<int, char>? curRow = getSymbols(data[i]);
                 Dictionary<int, char>? prevRow = null, nextRow = null;
 
-                MatchCollection matches = regex.Matches(data[i]);
+                MatchCollection matches = regexNum.Matches(data[i]);
                 if (i > 0)
                     prevRow = getSymbols(data[i - 1]);
 
@@ -376,7 +373,6 @@ namespace AoC23
         static void day3b() //67779080
         {
             List<string> data = dataToList(getData("3"), Environment.NewLine);
-            Regex regex = new Regex(@"\d+");
 
             int total = 0;
 
@@ -424,7 +420,6 @@ namespace AoC23
         static void day4a() //17782
         {
             List<string> data = dataToList(getData("4"), Environment.NewLine);
-            Regex regex = new Regex(@"\d+");
             int total = 0;
 
             foreach (string row in data)
@@ -435,7 +430,7 @@ namespace AoC23
                 winning = winning.Remove(0, winning.IndexOf(":") + 1).Replace("  ", " 0");
                 yours = yours.Replace("  ", " 0");
 
-                MatchCollection winningNums = regex.Matches(winning);
+                MatchCollection winningNums = regexNum.Matches(winning);
                 int rowTotal = 0;
 
                 foreach (Match match in winningNums)
@@ -450,7 +445,6 @@ namespace AoC23
         static void day4b() //
         {
             List<string> data = dataToList(getData("4"), Environment.NewLine);
-            Regex regex = new Regex(@"\d+");
             Dictionary<int, int> amounts = new Dictionary<int, int>();
             int total = 0;
 
@@ -469,7 +463,7 @@ namespace AoC23
                     winning = winning.Remove(0, winning.IndexOf(":") + 1).Replace("  ", " 0");
                     yours = yours.Replace("  ", " 0");
 
-                    MatchCollection winningNums = regex.Matches(winning);
+                    MatchCollection winningNums = regexNum.Matches(winning);
                     int rowTotal = 0;
 
                     foreach (Match match in winningNums)
@@ -488,26 +482,188 @@ namespace AoC23
         #endregion
 
         #region day 5
-        static void day5a() //
+        static void day5a() //579439039
         {
+            List<string> data = dataToList(getData("5"), Environment.NewLine);
+            Int64 lowest = Int64.MaxValue;
+
+            string seedData = data[0];
+            MatchCollection seeds = regexNum.Matches(seedData);
+            List<seedRangeMap> ranges = new List<seedRangeMap>();
             
+            data.RemoveRange(0, 2);
+
+            string key = "";
+            foreach(string row in data.FindAll(x => x != ""))
+            {
+                if (row.Contains("map"))
+                { 
+                    key = row.Replace(" map:", "");
+                    continue;
+                }
+
+                string[] vals = row.Split(" ");
+
+                seedRangeMap map = new seedRangeMap(key, Int64.Parse(vals[0]), Int64.Parse(vals[1]), Int64.Parse(vals[2])) ;
+                ranges.Add(map);
+            }
+
+            foreach (Match match in seeds)
+            {
+                Int64 seed = Int64.Parse(match.Value);
+                seedRangeMap soilMap = ranges.Find(x => x.Source <= seed && x.Source + x.Length >= seed && x.Key == "seed-to-soil");
+                Int64 soil = soilMap != null ? soilMap.Dest + (seed - soilMap.Source) : seed;
+
+                seedRangeMap fertMap = ranges.Find(x => x.Source <= soil && x.Source + x.Length >= soil && x.Key == "soil-to-fertilizer");
+                Int64 fert = fertMap != null ? fertMap.Dest + (soil - fertMap.Source) : soil;
+
+                seedRangeMap waterMap = ranges.Find(x => x.Source <= fert && x.Source + x.Length >= fert && x.Key == "fertilizer-to-water");
+                Int64 water = waterMap != null ? waterMap.Dest + (fert - waterMap.Source) : fert;
+
+                seedRangeMap lightMap = ranges.Find(x => x.Source <= water && x.Source + x.Length >= water && x.Key == "water-to-light");
+                Int64 light = lightMap != null ? lightMap.Dest + (water - lightMap.Source) : water;
+
+                seedRangeMap tempMap = ranges.Find(x => x.Source <= light && x.Source + x.Length >= light && x.Key == "light-to-temperature");
+                Int64 temp = tempMap != null ? tempMap.Dest + (light - tempMap.Source) : light;
+
+                seedRangeMap humidMap = ranges.Find(x => x.Source <= temp && x.Source + x.Length >= temp && x.Key == "temperature-to-humidity");
+                Int64 humid = humidMap != null ? humidMap.Dest + (temp - humidMap.Source) : temp;
+
+                seedRangeMap locMap = ranges.Find(x => x.Source <= humid && x.Source + x.Length >= humid && x.Key == "humidity-to-location");
+                Int64 loc = locMap != null ? locMap.Dest + (humid - locMap.Source) : humid;
+
+                lowest = loc < lowest ? loc : lowest;
+            }
+            print(lowest.ToString());
+        }
+
+        public class seedRangeMap 
+        {
+            public string Key;
+            public Int64 Dest;
+            public Int64 Source;
+            public Int64 Length;
+            public seedRangeMap(string key, Int64 dest, Int64 source, Int64 length) 
+            {
+                this.Key = key;
+                this.Dest = dest;
+                this.Source = source;
+                this.Length = length;
+            }
         }
 
         static void day5b() //
         {
+            List<string> data = dataToList(getData("5"), Environment.NewLine);
+            Int64 lowest = Int64.MaxValue;
 
+            string seedData = data[0];
+            MatchCollection seedRanges = regexNum.Matches(seedData);
+            List<seedRangeMap> ranges = new List<seedRangeMap>();
+            List<Int64> seeds = new List<Int64>();
+
+            for(int i = 0; i < seedRanges.Count; i+=2) 
+            {
+                Int64 start = Int64.Parse(seedRanges[i].ToString());
+                Int64 count = Int64.Parse(seedRanges[i+1].ToString());
+                for (int j = 0; j < count; j++)
+                {
+                    seeds.Add(start + j);
+                }
+            }
+
+            data.RemoveRange(0, 2);
+
+            string key = "";
+            foreach (string row in data.FindAll(x => x != ""))
+            {
+                if (row.Contains("map"))
+                {
+                    key = row.Replace(" map:", "");
+                    continue;
+                }
+
+                string[] vals = row.Split(" ");
+
+                seedRangeMap map = new seedRangeMap(key, Int64.Parse(vals[0]), Int64.Parse(vals[1]), Int64.Parse(vals[2]));
+                ranges.Add(map);
+            }
+            int x = 0;
+            foreach (Int64 seed in seeds)
+            {
+                x++;
+                seedRangeMap soilMap = ranges.Find(x => x.Source <= seed && x.Source + x.Length >= seed && x.Key == "seed-to-soil");
+                Int64 soil = soilMap != null ? soilMap.Dest + (seed - soilMap.Source) : seed;
+
+                seedRangeMap fertMap = ranges.Find(x => x.Source <= soil && x.Source + x.Length >= soil && x.Key == "soil-to-fertilizer");
+                Int64 fert = fertMap != null ? fertMap.Dest + (soil - fertMap.Source) : soil;
+
+                seedRangeMap waterMap = ranges.Find(x => x.Source <= fert && x.Source + x.Length >= fert && x.Key == "fertilizer-to-water");
+                Int64 water = waterMap != null ? waterMap.Dest + (fert - waterMap.Source) : fert;
+
+                seedRangeMap lightMap = ranges.Find(x => x.Source <= water && x.Source + x.Length >= water && x.Key == "water-to-light");
+                Int64 light = lightMap != null ? lightMap.Dest + (water - lightMap.Source) : water;
+
+                seedRangeMap tempMap = ranges.Find(x => x.Source <= light && x.Source + x.Length >= light && x.Key == "light-to-temperature");
+                Int64 temp = tempMap != null ? tempMap.Dest + (light - tempMap.Source) : light;
+
+                seedRangeMap humidMap = ranges.Find(x => x.Source <= temp && x.Source + x.Length >= temp && x.Key == "temperature-to-humidity");
+                Int64 humid = humidMap != null ? humidMap.Dest + (temp - humidMap.Source) : temp;
+
+                seedRangeMap locMap = ranges.Find(x => x.Source <= humid && x.Source + x.Length >= humid && x.Key == "humidity-to-location");
+                Int64 loc = locMap != null ? locMap.Dest + (humid - locMap.Source) : humid;
+
+                lowest = loc < lowest ? loc : lowest;
+            }
+            print(lowest.ToString());
         }
         #endregion
 
         #region day 6
-        static void day6a() //
+        static void day6a() //2374848
         {
+            string data = getData("6");
+            MatchCollection matches = regexNum.Matches(data);
+            int total = 1;
 
+            List<int> times = new List<int>(), distances = new List<int>();
+            for(int i  = 0; i < 4; i++)
+                times.Add(int.Parse(matches[i].Value));
+            for(int i = 4; i < matches.Count; i++)
+                distances.Add(int.Parse(matches[i].Value));
+
+            for (int i = 0; i < times.Count; i++)
+            {
+                int time = times[i];
+                int raceTotal = 0;
+                for(int j = 0; j < time; j++)
+                {
+                    if (j * (time - j) >= distances[i])
+                        raceTotal++;
+                }
+                total *= raceTotal;
+            }
+            printInt(total);
         }
 
-        static void day6b() //
+        static void day6b() //39132886
         {
+            string data = getData("6").Replace(" ","");
+            MatchCollection matches = regexNum.Matches(data);
+            int total = 0;
+            
+            Int64 time = Int64.Parse(matches[0].Value);
+            Int64 distance = Int64.Parse(matches[1].Value);
 
+            for (Int64 j = 0; j < time; j++)
+            {
+                if (j * (time - j) >= distance)
+                    break;
+                else
+                    total++;
+            }
+             
+            print((time - (total * 2) + 1).ToString());
         }
         #endregion
 
