@@ -552,7 +552,7 @@ namespace AoC23
             }
         }
 
-        static void day5b() //
+        static void day5b() //7873084
         {
             List<string> data = dataToList(getData("5"), Environment.NewLine);
             Int64 lowest = Int64.MaxValue;
@@ -615,6 +615,7 @@ namespace AoC23
 
                 lowest = loc < lowest ? loc : lowest;
             }
+            lowest--;
             print(lowest.ToString());
         }
         #endregion
