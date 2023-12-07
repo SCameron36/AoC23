@@ -9,6 +9,8 @@ using System.IO;
 using System.Net;
 using System.Data;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using MoreLinq.Extensions;
+using System.Reflection.Metadata.Ecma335;
 
 namespace AoC23
 {
@@ -671,12 +673,196 @@ namespace AoC23
         #region day 7
         static void day7a() //
         {
+            List<string> data = dataToList(getData("7"), Environment.NewLine);
+            Dictionary<Hand, int> hands = new Dictionary<Hand, int>();
+            Int64 total = 0;
+            foreach(string row in data)
+            {
+                Hand hand = new Hand(row.Split(" ")[0], int.Parse(row.Split(" ")[1]));
+                hands.Add(hand, hand.getRank());
+            }
+            var sortedHands = from hand in hands orderby hand.Value, hand.Key.SortableCards select hand;
+            int x = 1;
+            foreach (var hand in sortedHands)
+            {
+                total += hand.Key.Bid * x;
+                x++;
+            }
 
+            print(total.ToString());
         }
 
+        public class Hand
+        {
+            Regex two = new Regex("(.)\\1{1,1}");
+            Regex three = new Regex("(.)\\1{2,}");
+            Regex four = new Regex("(.)\\1{3,}");
+            Regex five = new Regex("(.)\\1{4,}");
+            public string Cards { get; set; }
+            public int Bid { get; set; }
+            public Hand(string cards, int bid)
+            { 
+                this.Cards = cards; 
+                this.Bid = bid;
+            }
+
+            public string SortableCards
+            {
+                get
+                {
+                    return this.Cards.Replace("A", "E").Replace("K", "D").Replace("Q", "C").Replace("J", "B").Replace("T", "A");
+                }
+            }
+            public string SortableJokerCards
+            {
+                get
+                {
+                    return this.Cards.Replace("A", "E").Replace("K", "D").Replace("Q", "C").Replace("J", "1").Replace("T", "A");
+                }
+            }
+            public int getRank()
+            {
+                char[] cards = this.Cards.ToCharArray();
+                Array.Sort<char>(cards);
+                string sortedCards = new string(cards);
+                MatchCollection matchesTwo = two.Matches(sortedCards);
+                MatchCollection matches = five.Matches(sortedCards);
+                //5 of a kind
+                if (matches.Count > 0) 
+                    return 7;
+
+                //4 of a kind
+                matches = four.Matches(sortedCards);
+                if (matches.Count > 0)
+                    return 6;
+
+                //full house
+                matches = three.Matches(sortedCards);
+                if (matches.Count > 0 
+                    && ((sortedCards[0] == sortedCards[1] && sortedCards[0] == sortedCards[2] && sortedCards[3] == sortedCards[4]) 
+                    || (sortedCards[0] == sortedCards[1] && sortedCards[2] == sortedCards[3] && sortedCards[2] == sortedCards[4])))
+                    return 5;
+
+                //3 of a kind
+                if (matches.Count > 0)
+                    return 4;
+
+                //2 pairs
+                if (matchesTwo.Count > 1)
+                    return 3;
+
+                //1 pair
+                if (matchesTwo.Count > 0)
+                    return 2;
+
+                //high card
+                return 1;
+            }
+            public int getRankWithJokers()
+            {
+                char[] cards = this.Cards.ToCharArray();
+                Array.Sort<char>(cards);
+                string sortedCards = new string(cards);
+                MatchCollection matchesTwo = two.Matches(sortedCards);
+                MatchCollection matches = five.Matches(sortedCards);
+                //5 of a kind
+                if (matches.Count > 0)
+                    return 7;
+
+                //4 of a kind
+                matches = four.Matches(sortedCards);
+                if (matches.Count > 0)
+                {
+                    //check if 5th card is joker, turn into 5 of a kind
+                    if ((sortedCards[0] == sortedCards[1] && sortedCards[4] == 'J') 
+                        || (sortedCards[0] == 'J' && sortedCards[1] == sortedCards[4]) 
+                        || sortedCards.Contains("JJJJ"))
+                        return 7;
+                    else
+                        return 6;
+                }
+
+                //full house
+                matches = three.Matches(sortedCards);
+                if (matches.Count > 0
+                    && ((sortedCards[0] == sortedCards[1] && sortedCards[0] == sortedCards[2] && sortedCards[3] == sortedCards[4])
+                    || (sortedCards[0] == sortedCards[1] && sortedCards[2] == sortedCards[3] && sortedCards[2] == sortedCards[4])))
+                {
+                    //check for 5 of a kind, then 4 of a kind
+                    if (sortedCards.StartsWith("JJ") || sortedCards.EndsWith("JJ"))
+                        return 7;
+                    else if ((sortedCards[0] == sortedCards[1] && (sortedCards[3] == 'J' || sortedCards[4] == 'J'))
+                        || (sortedCards[1] == sortedCards[2] && (sortedCards[0] == 'J' || sortedCards[4] == 'J'))
+                        || (sortedCards[2] == sortedCards[3] && (sortedCards[0] == 'J' || sortedCards[1] == 'J')))
+                        return 6;
+                    else 
+                        return 5;
+                }
+
+                //3 of a kind
+                if (matches.Count > 0)
+                {
+                    //check for 4 of a kind
+                    if ((sortedCards[0] == sortedCards[1] && (sortedCards[3] == 'J' || sortedCards[4] == 'J'))
+                        || (sortedCards[1] == sortedCards[2] && (sortedCards[0] == 'J' || sortedCards[4] == 'J'))
+                        || (sortedCards[2] == sortedCards[3] && (sortedCards[0] == 'J' || sortedCards[1] == 'J'))
+                        || sortedCards.Contains("JJJ"))
+                        return 6;
+                    else if ((sortedCards[0] == sortedCards[1] && sortedCards[0] == sortedCards[2] && sortedCards[3] == sortedCards[4])
+                        || (sortedCards[0] == sortedCards[1] && sortedCards[2] == sortedCards[3] && sortedCards[2] == sortedCards[4]))
+                        return 5;
+                    else
+                        return 4;
+                }
+
+                //2 pairs
+                if (matchesTwo.Count > 1)
+                {
+                    //check for 4 of a kind, then full house
+                    if (sortedCards.Contains("JJ"))
+                        return 6;
+                    else if (sortedCards.Contains("J"))
+                        return 5;
+                    return 3;
+                }
+
+                //1 pair
+                if (matchesTwo.Count > 0)
+                {
+                    //check for 3 of a kind
+                    if (sortedCards.Contains("J"))
+                        return 4;
+                    else
+                        return 2;
+                }
+
+                //high card
+                if (sortedCards.Contains("J"))
+                    return 2;
+                else
+                    return 1;
+            }
+        }
         static void day7b() //
         {
+            List<string> data = dataToList(getData("7"), Environment.NewLine);
+            Dictionary<Hand, int> hands = new Dictionary<Hand, int>();
+            Int64 total = 0;
+            foreach (string row in data)
+            {
+                Hand hand = new Hand(row.Split(" ")[0], int.Parse(row.Split(" ")[1]));
+                hands.Add(hand, hand.getRankWithJokers());
+            }
+            var sortedHands = from hand in hands orderby hand.Value, hand.Key.SortableJokerCards select hand;
+            int x = 1;
+            foreach (var hand in sortedHands)
+            {
+                print($"{x}: {hand.Key.Cards} -> {hand.Key.SortableJokerCards}: {hand.Key.getRankWithJokers()}");
+                total += hand.Key.Bid * x;
+                x++;
+            }
 
+            print(total.ToString());
         }
         #endregion
 
